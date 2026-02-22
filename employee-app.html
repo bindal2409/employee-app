@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EmpView – Employee Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.3/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #13131a; --surface2: #1c1c28;
+    --border: #2a2a3a; --accent: #7c6aff; --accent2: #ff6a9b;
+    --text: #e8e8f0; --muted: #7878a0; --success: #4fffb0;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; opacity:.5; }
+  #root { position:relative; z-index:1; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse  { 0%,100%{opacity:.6} 50%{opacity:1} }
+  @keyframes spin   { to{transform:rotate(360deg)} }
+  .fade-up  { animation:fadeUp .5s ease both; }
+  .fade-up-2{ animation:fadeUp .5s .1s ease both; }
+
+  /* LOGIN */
+  .login-wrap { min-height:100vh; display:grid; place-items:center; padding:2rem; background:radial-gradient(ellipse 80% 60% at 50% 0%,#1a1035 0%,transparent 70%); }
+  .login-card { width:100%; max-width:420px; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2.5rem; box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(124,106,255,.1); animation:fadeUp .6s ease; }
+  .login-logo { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:.25rem; }
+  .login-sub  { color:var(--muted); font-size:.9rem; margin-bottom:2rem; }
+  .field { margin-bottom:1.25rem; }
+  .field label { display:block; font-size:.8rem; color:var(--muted); margin-bottom:.5rem; letter-spacing:.05em; text-transform:uppercase; }
+  .field input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:inherit; font-size:.95rem; padding:.75rem 1rem; transition:border-color .2s,box-shadow .2s; outline:none; }
+  .field input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(124,106,255,.15); }
+  .btn-primary { width:100%; background:linear-gradient(135deg,var(--accent),#5a4de0); border:none; border-radius:10px; color:#fff; font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; padding:.85rem; cursor:pointer; letter-spacing:.03em; transition:opacity .2s,transform .15s; }
+  .btn-primary:hover { opacity:.9; transform:translateY(-1px); }
+  .error-msg { background:rgba(255,80,80,.1); border:1px solid rgba(255,80,80,.3); border-radius:8px; color:#ff8080; font-size:.85rem; padding:.6rem .9rem; margin-top:1rem; text-align:center; }
+  .login-hint { margin-top:1.25rem; text-align:center; font-size:.78rem; color:var(--muted); background:var(--surface2); border-radius:8px; padding:.6rem; border:1px solid var(--border); }
+  .login-hint span { color:var(--accent); }
+
+  /* SHELL */
+  .app-shell { min-height:100vh; display:flex; flex-direction:column; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; background:rgba(19,19,26,.95); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+  .topbar-logo { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .topbar-actions { display:flex; gap:.75rem; align-items:center; }
+  .btn-sm { padding:.45rem 1rem; border-radius:8px; font-family:'Syne',sans-serif; font-size:.8rem; font-weight:600; cursor:pointer; border:none; transition:all .2s; letter-spacing:.02em; }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--muted); }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-accent  { background:linear-gradient(135deg,var(--accent),#5a4de0); color:#fff; }
+  .btn-accent:hover { opacity:.85; }
+  .btn-danger  { background:transparent; border:1px solid rgba(255,80,80,.3); color:#ff8080; }
+  .btn-danger:hover { background:rgba(255,80,80,.1); }
+  .page-content { flex:1; padding:2rem; max-width:1200px; margin:0 auto; width:100%; }
+
+  /* LIST */
+  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; margin-bottom:1.75rem; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.25rem; animation:fadeUp .5s ease both; }
+  .stat-icon { font-size:1.4rem; margin-bottom:.5rem; }
+  .stat-num  { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
+  .stat-lbl  { color:var(--muted); font-size:.75rem; margin-top:.2rem; }
+  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; flex-wrap:wrap; gap:1rem; }
+  .page-title  { font-family:'Syne',sans-serif; font-size:1.75rem; font-weight:800; }
+  .page-title span { color:var(--muted); font-weight:400; font-size:1rem; margin-left:.5rem; }
+  .search-bar { display:flex; align-items:center; gap:.5rem; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.5rem 1rem; margin-bottom:1.25rem; transition:border-color .2s; }
+  .search-bar:focus-within { border-color:var(--accent); }
+  .search-bar input { background:none; border:none; color:var(--text); font-family:inherit; font-size:.9rem; outline:none; flex:1; }
+  .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); overflow-x:auto; }
+  .employee-table { width:100%; border-collapse:collapse; }
+  .employee-table thead tr { background:var(--surface2); }
+  .employee-table th { padding:.85rem 1rem; text-align:left; font-family:'Syne',sans-serif; font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .employee-table td { padding:.85rem 1rem; font-size:.9rem; border-bottom:1px solid rgba(42,42,58,.5); vertical-align:middle; white-space:nowrap; }
+  .employee-table tbody tr { cursor:pointer; transition:background .15s; }
+  .employee-table tbody tr:hover { background:var(--surface2); }
+  .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:inline-flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:.75rem; font-weight:700; color:#fff; margin-right:.75rem; flex-shrink:0; }
+  .name-cell { display:flex; align-items:center; }
+  .badge { display:inline-block; padding:.25rem .6rem; border-radius:6px; font-size:.75rem; font-weight:500; background:rgba(79,255,176,.1); color:var(--success); border:1px solid rgba(79,255,176,.2); }
+  .loading-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem; gap:1rem; }
+  .spinner { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; }
+  .loading-text { color:var(--muted); font-size:.9rem; animation:pulse 1.5s ease infinite; }
+  .pagination { display:flex; gap:.5rem; justify-content:flex-end; margin-top:1rem; align-items:center; }
+  .pg-btn { padding:.35rem .75rem; border-radius:7px; border:1px solid var(--border); background:transparent; color:var(--text); font-family:inherit; font-size:.85rem; cursor:pointer; transition:all .15s; }
+  .pg-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .pg-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .pg-btn:disabled { opacity:.4; cursor:not-allowed; }
+  .pg-info { color:var(--muted); font-size:.82rem; }
+
+  /* DETAILS */
+  .back-btn { display:inline-flex; align-items:center; gap:.5rem; color:var(--muted); font-size:.85rem; cursor:pointer; background:none; border:none; padding:.5rem 0; margin-bottom:1.5rem; font-family:inherit; transition:color .2s; }
+  .back-btn:hover { color:var(--text); }
+  .hero-card { background:linear-gradient(135deg,#16162a,#1c1a3a); border:1px solid rgba(124,106,255,.2); border-radius:18px; padding:2rem; display:flex; align-items:center; gap:1.5rem; margin-bottom:1.25rem; box-shadow:0 0 40px rgba(124,106,255,.07); }
+  .hero-avatar { width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; color:#fff; flex-shrink:0; box-shadow:0 0 20px rgba(124,106,255,.4); }
+  .hero-name { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; }
+  .hero-role { color:var(--success); font-size:.9rem; margin-top:.2rem; font-weight:500; }
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+  @media(max-width:600px){.detail-grid{grid-template-columns:1fr}}
+  .detail-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.25rem 1.5rem; }
+  .detail-label { color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; margin-bottom:.35rem; }
+  .detail-value { font-size:1rem; font-weight:500; }
+  .detail-value.big { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:var(--success); }
+
+  /* CAMERA */
+  .camera-section { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.5rem; margin-top:1rem; }
+  .camera-section h3 { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
+  .camera-preview { width:100%; max-width:480px; border-radius:12px; border:2px solid var(--border); background:#000; display:block; margin:0 auto 1rem; }
+
+  /* PHOTO */
+  .photo-result-wrap { display:flex; flex-direction:column; align-items:center; padding:2rem; gap:1.5rem; }
+  .photo-result-wrap img { max-width:100%; max-height:60vh; border-radius:16px; border:2px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,.5); animation:fadeUp .5s ease; }
+  .photo-badge { background:rgba(79,255,176,.1); border:1px solid rgba(79,255,176,.3); color:var(--success); border-radius:20px; padding:.4rem 1rem; font-size:.8rem; font-weight:500; }
+
+  /* CHART */
+  .chart-wrap { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:2rem; box-shadow:0 8px 32px rgba(0,0,0,.3); overflow-x:auto; }
+  .chart-title { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:800; margin-bottom:1.5rem; }
+  .bar-rect { transition:opacity .2s; }
+  .bar-rect:hover { opacity:1 !important; }
+
+  /* MAP */
+  .map-container { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.3); }
+  .map-frame { width:100%; height:500px; border:none; display:block; }
+  .city-pills { display:flex; flex-wrap:wrap; gap:.5rem; padding:1rem 1.5rem; border-top:1px solid var(--border); }
+  .city-pill { display:inline-flex; align-items:center; gap:.4rem; padding:.3rem .75rem; border-radius:20px; font-size:.78rem; background:rgba(124,106,255,.08); border:1px solid rgba(124,106,255,.2); color:var(--accent); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const REAL_API = "https://backend.jotish.in/backend_dev/gettabledata.php";
+
+const MOCK_DATA = [
+  {id:1,  emp_name:"Aarav Sharma",   department:"Engineering", salary:95000,  city:"Mumbai",    email:"aarav.sharma@company.com",   phone:"9876543210"},
+  {id:2,  emp_name:"Priya Patel",    department:"Marketing",   salary:72000,  city:"Delhi",     email:"priya.patel@company.com",    phone:"9876543211"},
+  {id:3,  emp_name:"Rohan Mehta",    department:"Finance",     salary:88000,  city:"Bangalore", email:"rohan.mehta@company.com",    phone:"9876543212"},
+  {id:4,  emp_name:"Sneha Iyer",     department:"HR",          salary:65000,  city:"Chennai",   email:"sneha.iyer@company.com",     phone:"9876543213"},
+  {id:5,  emp_name:"Vikram Singh",   department:"Engineering", salary:105000, city:"Hyderabad", email:"vikram.singh@company.com",   phone:"9876543214"},
+  {id:6,  emp_name:"Kavya Nair",     department:"Design",      salary:78000,  city:"Pune",      email:"kavya.nair@company.com",     phone:"9876543215"},
+  {id:7,  emp_name:"Arjun Reddy",    department:"Engineering", salary:112000, city:"Mumbai",    email:"arjun.reddy@company.com",    phone:"9876543216"},
+  {id:8,  emp_name:"Divya Krishnan", department:"Operations",  salary:69000,  city:"Kolkata",   email:"divya.krishnan@company.com", phone:"9876543217"},
+  {id:9,  emp_name:"Karan Joshi",    department:"Finance",     salary:91000,  city:"Ahmedabad", email:"karan.joshi@company.com",    phone:"9876543218"},
+  {id:10, emp_name:"Ananya Gupta",   department:"Marketing",   salary:74000,  city:"Delhi",     email:"ananya.gupta@company.com",   phone:"9876543219"},
+  {id:11, emp_name:"Rahul Verma",    department:"Engineering", salary:98000,  city:"Bangalore", email:"rahul.verma@company.com",    phone:"9876543220"},
+  {id:12, emp_name:"Pooja Desai",    department:"HR",          salary:63000,  city:"Surat",     email:"pooja.desai@company.com",    phone:"9876543221"},
+  {id:13, emp_name:"Aditya Kumar",   department:"Sales",       salary:82000,  city:"Jaipur",    email:"aditya.kumar@company.com",   phone:"9876543222"},
+  {id:14, emp_name:"Nisha Malhotra", department:"Design",      salary:76000,  city:"Mumbai",    email:"nisha.malhotra@company.com", phone:"9876543223"},
+  {id:15, emp_name:"Suresh Pillai",  department:"Operations",  salary:71000,  city:"Kochi",     email:"suresh.pillai@company.com",  phone:"9876543224"},
+  {id:16, emp_name:"Meera Saxena",   department:"Engineering", salary:103000, city:"Noida",     email:"meera.saxena@company.com",   phone:"9876543225"},
+  {id:17, emp_name:"Dev Chauhan",    department:"Sales",       salary:79000,  city:"Indore",    email:"dev.chauhan@company.com",    phone:"9876543226"},
+  {id:18, emp_name:"Riya Bhatt",     department:"Finance",     salary:86000,  city:"Pune",      email:"riya.bhatt@company.com",     phone:"9876543227"},
+  {id:19, emp_name:"Manish Tiwari",  department:"Marketing",   salary:68000,  city:"Lucknow",   email:"manish.tiwari@company.com",  phone:"9876543228"},
+  {id:20, emp_name:"Sonal Aggarwal", department:"Engineering", salary:99000,  city:"Gurgaon",   email:"sonal.aggarwal@company.com", phone:"9876543229"},
+];
+
+function parseAPIResponse(json) {
+  if (!json) return null;
+  if (json.Error || json.ErrorDescription) return null;
+  if (Array.isArray(json)) return json;
+  const arr = Object.values(json).find(v => Array.isArray(v));
+  return arr || null;
+}
+
+async function fetchEmployees() {
+  const body    = JSON.stringify({ username: "test", password: "123456" });
+  const headers = { "Content-Type": "application/json" };
+
+  // 1) Direct POST
+  try {
+    const res  = await fetch(REAL_API, { method:"POST", headers, body });
+    const json = await res.json();
+    const data = parseAPIResponse(json);
+    if (data) return data;
+  } catch(e) {}
+
+  // 2) corsproxy.io
+  try {
+    const res  = await fetch("https://corsproxy.io/?" + encodeURIComponent(REAL_API), {
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "x-requested-with":"XMLHttpRequest" },
+      body
+    });
+    const json = await res.json();
+    const data = parseAPIResponse(json);
+    if (data) return data;
+  } catch(e) {}
+
+  // Fallback: mock data (API has CORS restriction)
+  console.warn("Live API blocked by CORS — using mock data.");
+  return MOCK_DATA;
+}
+
+function getInitials(name) { return (name + "").split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2) || "?"; }
+function formatSalary(val) { const n = parseFloat(val); return isNaN(n) ? String(val) : "$" + n.toLocaleString(); }
+function findKey(keys, pattern) { return keys.find(k => pattern.test(k)) || null; }
+
+/* ── LOGIN ── */
+function LoginPage({ onLogin }) {
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
+  const [err,  setErr]  = useState("");
+  const handle = e => {
+    e.preventDefault();
+    if (user === "testuser" && pass === "Test123") onLogin();
+    else setErr("Invalid credentials. Please try again.");
+  };
+  return (
+    <div className="login-wrap">
+      <div className="login-card">
+        <div className="login-logo">EmpView</div>
+        <div className="login-sub">Employee Management Portal</div>
+        <form onSubmit={handle}>
+          <div className="field">
+            <label>Username</label>
+            <input type="text" placeholder="testuser" value={user} autoFocus
+              onChange={e => { setUser(e.target.value); setErr(""); }} />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input type="password" placeholder="••••••••" value={pass}
+              onChange={e => { setPass(e.target.value); setErr(""); }} />
+          </div>
+          <button type="submit" className="btn-primary">Sign In →</button>
+          {err && <div className="error-msg">{err}</div>}
+        </form>
+        <div className="login-hint">Demo: <span>testuser</span> / <span>Test123</span></div>
+      </div>
+    </div>
+  );
+}
+
+/* ── TOPBAR ── */
+function Topbar({ onLogout, onNavigate, currentPage }) {
+  return (
+    <div className="topbar">
+      <div className="topbar-logo" style={{cursor:'pointer'}} onClick={() => onNavigate('list')}>EmpView</div>
+      <div className="topbar-actions">
+        {currentPage !== 'list' && <button className="btn-sm btn-outline" onClick={() => onNavigate('list')}>← List</button>}
+        {currentPage === 'list' && <>
+          <button className="btn-sm btn-accent" onClick={() => onNavigate('graph')}>📊 Bar Graph</button>
+          <button className="btn-sm btn-outline" onClick={() => onNavigate('map')}>🗺 Map</button>
+        </>}
+        <button className="btn-sm btn-danger" onClick={onLogout}>Sign out</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── LIST ── */
+const PER_PAGE = 10;
+function ListPage({ employees, loading, error, onSelect }) {
+  const [query, setQuery] = useState("");
+  const [page,  setPage]  = useState(1);
+  const filtered = employees.filter(emp =>
+    !query || Object.values(emp).some(v => String(v).toLowerCase().includes(query.toLowerCase()))
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const slice = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+  const cols = employees.length > 0 ? Object.keys(employees[0]).slice(0,6) : [];
+  const keys = employees.length > 0 ? Object.keys(employees[0]) : [];
+  const salaryKey = findKey(keys, /salary|sal|pay|wage/i);
+  const nameKey   = findKey(keys, /name|emp_name/i) || keys[0];
+  const cityKey   = findKey(keys, /city|location|place/i);
+  const deptKey   = findKey(keys, /dept|department|div/i);
+  const totalSalary  = employees.reduce((s,e) => s + (parseFloat(e[salaryKey])||0), 0);
+  const uniqueCities = [...new Set(employees.map(e => e[cityKey]).filter(Boolean))];
+  const uniqueDepts  = [...new Set(employees.map(e => e[deptKey]).filter(Boolean))];
+  const safePage = Math.min(page, totalPages);
+  return (
+    <div className="page-content fade-up">
+      <div className="stats-row">
+        <div className="stat-card"><div className="stat-icon">👥</div><div className="stat-num">{employees.length}</div><div className="stat-lbl">Employees</div></div>
+        {cityKey   && <div className="stat-card"><div className="stat-icon">🏙</div><div className="stat-num">{uniqueCities.length}</div><div className="stat-lbl">Cities</div></div>}
+        {deptKey   && <div className="stat-card"><div className="stat-icon">🏢</div><div className="stat-num">{uniqueDepts.length}</div><div className="stat-lbl">Departments</div></div>}
+        {salaryKey && <div className="stat-card"><div className="stat-icon">💰</div><div className="stat-num">${Math.round(totalSalary/1000)}K</div><div className="stat-lbl">Total Payroll</div></div>}
+      </div>
+      <div className="page-header">
+        <div className="page-title">Employees <span>{filtered.length} records</span></div>
+      </div>
+      <div className="search-bar">
+        <span>🔍</span>
+        <input placeholder="Search employees, cities, departments…" value={query}
+          onChange={e => { setQuery(e.target.value); setPage(1); }} />
+        {query && <button style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer'}} onClick={() => setQuery("")}>✕</button>}
+      </div>
+      {loading && <div className="loading-wrap"><div className="spinner"></div><div className="loading-text">Fetching employee data…</div></div>}
+      {error   && <div className="error-msg" style={{padding:'1rem',marginBottom:'1rem'}}>{error}</div>}
+      {!loading && !error && <>
+        <div className="table-wrap fade-up-2">
+          <table className="employee-table">
+            <thead><tr>{cols.map(c => <th key={c}>{c.replace(/_/g,' ')}</th>)}</tr></thead>
+            <tbody>
+              {slice.map((emp, i) => (
+                <tr key={i} onClick={() => onSelect(emp)}>
+                  {cols.map((c, ci) => (
+                    <td key={c}>
+                      {ci === 0
+                        ? <div className="name-cell"><div className="avatar">{getInitials(String(emp[c]))}</div>{String(emp[c])}</div>
+                        : c === salaryKey ? <span className="badge">{formatSalary(emp[c])}</span>
+                        : String(emp[c])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {totalPages > 1 && (
+          <div className="pagination">
+            <span className="pg-info">Page {safePage} of {totalPages}</span>
+            <button className="pg-btn" onClick={() => setPage(p => p-1)} disabled={safePage===1}>‹</button>
+            {Array.from({length: Math.min(totalPages,7)}, (_,i) => i+1).map(p =>
+              <button key={p} className={`pg-btn ${safePage===p?'active':''}`} onClick={() => setPage(p)}>{p}</button>
+            )}
+            <button className="pg-btn" onClick={() => setPage(p => Math.min(p+1,totalPages))} disabled={safePage===totalPages}>›</button>
+          </div>
+        )}
+      </>}
+    </div>
+  );
+}
+
+/* ── DETAILS ── */
+function DetailsPage({ employee, onBack, onPhoto }) {
+  const keys = Object.keys(employee);
+  const nameKey   = findKey(keys, /name/i) || keys[0];
+  const salaryKey = findKey(keys, /salary|sal/i);
+  const name = String(employee[nameKey] || "Employee");
+  return (
+    <div className="page-content fade-up">
+      <button className="back-btn" onClick={onBack}>← Back to list</button>
+      <div className="hero-card">
+        <div className="hero-avatar">{getInitials(name)}</div>
+        <div>
+          <div className="hero-name">{name}</div>
+          {salaryKey && <div className="hero-role">{formatSalary(employee[salaryKey])}/mo</div>}
+        </div>
+      </div>
+      <div className="detail-grid">
+        {keys.filter(k => k !== nameKey).map(k => (
+          <div className="detail-card" key={k}>
+            <div className="detail-label">{k.replace(/_/g,' ')}</div>
+            <div className={`detail-value ${k===salaryKey?'big':''}`}>
+              {k===salaryKey ? formatSalary(employee[k]) : String(employee[k]||'—')}
+            </div>
+          </div>
+        ))}
+      </div>
+      <CameraSection onCapture={onPhoto} />
+    </div>
+  );
+}
+
+/* ── CAMERA ── */
+function CameraSection({ onCapture }) {
+  const videoRef  = useRef(null);
+  const canvasRef = useRef(null);
+  const [streaming, setStreaming] = useState(false);
+  const [camError,  setCamError]  = useState("");
+  const startCamera = async () => {
+    setCamError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+      setStreaming(true);
+    } catch(e) { setCamError("Camera access denied or unavailable."); }
+  };
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject)
+      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+    setStreaming(false);
+  };
+  const capture = () => {
+    const v = videoRef.current, c = canvasRef.current;
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext("2d").drawImage(v, 0, 0);
+    stopCamera();
+    onCapture(c.toDataURL("image/png"));
+  };
+  return (
+    <div className="camera-section">
+      <h3>📸 Capture Photo</h3>
+      {camError && <div className="error-msg" style={{marginBottom:'1rem'}}>{camError}</div>}
+      <video ref={videoRef} className="camera-preview" style={{display:streaming?'block':'none'}} muted playsInline />
+      <canvas ref={canvasRef} style={{display:'none'}} />
+      <div style={{display:'flex',gap:'.75rem',flexWrap:'wrap'}}>
+        {!streaming && <button className="btn-sm btn-accent" style={{padding:'.6rem 1.2rem',fontSize:'.9rem'}} onClick={startCamera}>📷 Start Camera</button>}
+        {streaming  && <>
+          <button className="btn-sm btn-accent"  style={{padding:'.6rem 1.2rem',fontSize:'.9rem'}} onClick={capture}>📸 Take Photo</button>
+          <button className="btn-sm btn-outline" style={{padding:'.6rem 1.2rem',fontSize:'.9rem'}} onClick={stopCamera}>Stop</button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+/* ── PHOTO RESULT ── */
+function PhotoResultPage({ photoUrl, onBack, employee }) {
+  const keys = Object.keys(employee);
+  const nameKey = findKey(keys, /name/i) || keys[0];
+  return (
+    <div className="page-content fade-up">
+      <button className="back-btn" onClick={onBack}>← Back to details</button>
+      <div className="page-title" style={{marginBottom:'1.5rem'}}>Photo Captured</div>
+      <div className="photo-result-wrap">
+        <div className="photo-badge">✓ Photo captured successfully</div>
+        <img src={photoUrl} alt="Captured" />
+        <div style={{color:'var(--muted)',fontSize:'.85rem'}}>
+          Photo of <strong style={{color:'var(--text)'}}>{String(employee[nameKey])}</strong> — {new Date().toLocaleString()}
+        </div>
+        <button className="btn-sm btn-accent" style={{padding:'.7rem 1.5rem',fontSize:'.9rem'}}
+          onClick={() => { const a = document.createElement('a'); a.href = photoUrl; a.download = 'photo.png'; a.click(); }}>
+          ⬇ Download
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── BAR GRAPH (pure SVG — no external chart lib) ── */
+function BarGraphPage({ employees }) {
+  const keys      = employees.length > 0 ? Object.keys(employees[0]) : [];
+  const salaryKey = findKey(keys, /salary|sal|pay|wage/i);
+  const nameKey   = findKey(keys, /name|emp_name/i) || keys[0];
+  const [tooltip, setTooltip] = useState(null);
+
+  if (!salaryKey) return (
+    <div className="page-content fade-up">
+      <div className="page-title" style={{marginBottom:'1.5rem'}}>📊 Bar Graph</div>
+      <div className="chart-wrap"><p style={{color:'var(--muted)'}}>No salary field found in API data.</p></div>
+    </div>
+  );
+
+  const raw    = employees.slice(0,10);
+  const data   = raw.map(e => ({ name: String(e[nameKey]||'').split(' ')[0], full: String(e[nameKey]||''), value: parseFloat(e[salaryKey])||0 }));
+  const COLORS = ['#7c6aff','#a06aff','#ff6a9b','#4fffb0','#ffb06a','#6ac8ff','#ff6aff','#b0ff6a','#ff9b6a','#6affff'];
+
+  const W=700, H=360, padL=76, padR=24, padT=24, padB=88;
+  const chartW = W-padL-padR, chartH = H-padT-padB;
+  const maxVal = Math.max(...data.map(d => d.value), 1);
+  const gap    = chartW / data.length;
+  const barW   = Math.max(20, Math.floor(gap * 0.55));
+  const ticks  = [0,.25,.5,.75,1].map(f => ({ val: maxVal*f, y: padT+chartH - f*chartH }));
+
+  return (
+    <div className="page-content fade-up">
+      <div className="page-title" style={{marginBottom:'1.5rem'}}>📊 Salary Distribution – Top 10</div>
+      <div className="chart-wrap">
+        <div className="chart-title">Employee Salaries</div>
+        <div style={{overflowX:'auto'}}>
+          <svg width={W} height={H} style={{display:'block',minWidth:320}}>
+            {/* grid */}
+            {ticks.map((t,i) => (
+              <g key={i}>
+                <line x1={padL} y1={t.y} x2={W-padR} y2={t.y} stroke="rgba(255,255,255,.05)" strokeDasharray="4 4"/>
+                <text x={padL-8} y={t.y+4} textAnchor="end" fill="#7878a0" fontSize={11} fontFamily="DM Sans,sans-serif">
+                  ${(t.val/1000).toFixed(0)}K
+                </text>
+              </g>
+            ))}
+            {/* axes */}
+            <line x1={padL} y1={padT} x2={padL} y2={padT+chartH} stroke="rgba(255,255,255,.1)"/>
+            <line x1={padL} y1={padT+chartH} x2={W-padR} y2={padT+chartH} stroke="rgba(255,255,255,.1)"/>
+            {/* bars */}
+            {data.map((d,i) => {
+              const bh = Math.max(2, (d.value/maxVal)*chartH);
+              const x  = padL + gap*i + (gap-barW)/2;
+              const y  = padT + chartH - bh;
+              const hot = tooltip && tooltip.i === i;
+              return (
+                <g key={i} style={{cursor:'pointer'}}
+                  onMouseEnter={() => setTooltip({i, x:x+barW/2, y, d})}
+                  onMouseLeave={() => setTooltip(null)}>
+                  <rect x={x} y={y} width={barW} height={bh} rx={6} ry={6}
+                    fill={COLORS[i%COLORS.length]} opacity={hot?1:0.82} className="bar-rect"/>
+                  <text x={x+barW/2} y={padT+chartH+16} textAnchor="end" fill="#7878a0" fontSize={11}
+                    fontFamily="DM Sans,sans-serif"
+                    transform={`rotate(-38,${x+barW/2},${padT+chartH+16})`}>{d.name}</text>
+                </g>
+              );
+            })}
+            {/* tooltip */}
+            {tooltip && (() => {
+              const tx = Math.min(tooltip.x-4, W-padR-134);
+              const ty = tooltip.y - 58;
+              return (
+                <g>
+                  <rect x={tx} y={ty} width={132} height={48} rx={9}
+                    fill="#1c1c28" stroke="rgba(124,106,255,.45)" strokeWidth={1}/>
+                  <text x={tx+10} y={ty+18} fill="#e8e8f0" fontSize={11}
+                    fontFamily="Syne,sans-serif" fontWeight="700">{tooltip.d.full.slice(0,18)}</text>
+                  <text x={tx+10} y={ty+36} fill="#4fffb0" fontSize={13}
+                    fontFamily="DM Sans,sans-serif" fontWeight="600">${tooltip.d.value.toLocaleString()}</text>
+                </g>
+              );
+            })()}
+          </svg>
+        </div>
+        {/* legend row */}
+        <div style={{display:'flex',flexWrap:'wrap',gap:'.5rem',marginTop:'1rem'}}>
+          {data.map((d,i) => (
+            <span key={i} style={{display:'inline-flex',alignItems:'center',gap:'.35rem',fontSize:'.75rem',color:'var(--muted)'}}>
+              <span style={{width:10,height:10,borderRadius:3,background:COLORS[i%COLORS.length],display:'inline-block'}}></span>
+              {d.full}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── MAP ── */
+function MapPage({ employees }) {
+  const keys    = employees.length > 0 ? Object.keys(employees[0]) : [];
+  const cityKey = findKey(keys, /city|location|place/i);
+  const cities  = [...new Set(employees.map(e => e[cityKey]).filter(Boolean))];
+  const mapSrc  = `https://maps.google.com/maps?q=${encodeURIComponent(cities[0]||'India')}&output=embed&z=5`;
+  return (
+    <div className="page-content fade-up">
+      <div className="page-title" style={{marginBottom:'1.5rem'}}>🗺 Employee Locations</div>
+      <div className="map-container">
+        <iframe className="map-frame" src={mapSrc} allowFullScreen loading="lazy" title="Employee Map"/>
+        {cities.length > 0 && (
+          <div className="city-pills">
+            {cities.map((city,i) => (
+              <span key={i} className="city-pill">
+                📍 {city} <span style={{color:'var(--muted)',marginLeft:2}}>({employees.filter(e=>e[cityKey]===city).length})</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── APP ROOT ── */
+function App() {
+  const [loggedIn,   setLoggedIn]   = useState(false);
+  const [employees,  setEmployees]  = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState("");
+  const [page,       setPage]       = useState("list");
+  const [selected,   setSelected]   = useState(null);
+  const [photoUrl,   setPhotoUrl]   = useState(null);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    setLoading(true); setError("");
+    fetchEmployees()
+      .then(data => { setEmployees(data); setLoading(false); })
+      .catch(e   => { setError("Failed to load: " + e.message); setLoading(false); });
+  }, [loggedIn]);
+
+  if (!loggedIn) return <LoginPage onLogin={() => setLoggedIn(true)} />;
+
+  const logout   = () => { setLoggedIn(false); setPage("list"); setSelected(null); setPhotoUrl(null); };
+  const navigate = p  => setPage(p);
+
+  return (
+    <div className="app-shell">
+      <Topbar onLogout={logout} onNavigate={navigate} currentPage={page} />
+      {page==="list"    && <ListPage employees={employees} loading={loading} error={error}
+                             onSelect={emp => { setSelected(emp); setPage("details"); }} />}
+      {page==="details" && selected && <DetailsPage employee={selected} onBack={() => setPage("list")}
+                             onPhoto={url => { setPhotoUrl(url); setPage("photo"); }} />}
+      {page==="photo"   && selected && photoUrl && <PhotoResultPage photoUrl={photoUrl}
+                             onBack={() => setPage("details")} employee={selected} />}
+      {page==="graph"   && <BarGraphPage employees={employees} />}
+      {page==="map"     && <MapPage employees={employees} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
